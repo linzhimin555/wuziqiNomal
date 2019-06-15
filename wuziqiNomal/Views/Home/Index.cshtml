@@ -1,0 +1,41 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<html>
+<body>
+    <div id="messagesList"></div>
+    当前位置：<em id="local">大厅</em>
+    <form id="Area">
+        <select id="room">
+            @foreach (var room in Model)
+            {
+                <option name="room" text="@room" value="@room">@room</option>
+            }
+        </select>
+        <input type="button" id="goIn" value="进入房间" />
+    </form>
+    <form id="Room"></form>
+    <canvas id="chess" position="absolute" width="1300" height="800"></canvas>
+</body>
+</html>
+<script src="~/Scripts/jquery-3.3.1.min.js"></script>
+<script src="~/Scripts/jquery.signalR-2.4.1.js"></script>
+<script src="~/Scripts/chat.js"></script>
+
+<script type="text/javascript">
+    var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+    connection.start().catch(function (err) {
+        return console.error(err.toString());
+    });
+    var room = "";
+    $("#goIn").on("click", function () {
+        room = $("#room").val();
+        connection.invoke("JoinRoom", room).catch(function (err) {
+            return console.error(err.toString());
+        }).then(function (data) {
+            console.log(data);
+            location.href = "Room?RoomId=" + data.roomName;
+        });
+    });
+</script>

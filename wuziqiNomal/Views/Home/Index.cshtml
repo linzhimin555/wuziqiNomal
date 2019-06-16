@@ -21,21 +21,19 @@
 </html>
 <script src="~/Scripts/jquery-3.3.1.min.js"></script>
 <script src="~/Scripts/jquery.signalR-2.4.1.js"></script>
+<script src="~/signalr/hubs"></script>
 <script src="~/Scripts/chat.js"></script>
 
 <script type="text/javascript">
-    var connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
-    connection.start().catch(function (err) {
-        return console.error(err.toString());
-    });
     var room = "";
-    $("#goIn").on("click", function () {
-        room = $("#room").val();
-        connection.invoke("JoinRoom", room).catch(function (err) {
-            return console.error(err.toString());
-        }).then(function (data) {
-            console.log(data);
-            location.href = "Room?RoomId=" + data.roomName;
+    var chat = $.connection.chatHub;
+    $.connection.hub.start().done(function () {
+        $("#goIn").on("click", function () {
+            room = $("#room").val();
+            chat.server.joinRoom(room).then(function (data) {
+                console.log(data);
+                location.href = "/Home/Room?RoomId=" + room;
+            });
         });
     });
 </script>

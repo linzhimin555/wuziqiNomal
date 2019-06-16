@@ -34,7 +34,7 @@ namespace wuziqiNomal
         public Room JoinRoom(string roomName)
         {
             Context.RequestCookies.TryGetValue("userId", out var userIds);
-            var userId = userIds.ToString();
+            var userId = userIds.Value;
             var room = RoomList.FirstOrDefault(o => o.RoomName == roomName);
 
             var user = users.FirstOrDefault(o => o.Id == userId);
@@ -77,8 +77,16 @@ namespace wuziqiNomal
             }
 
             users.FirstOrDefault(o => o.Id == userId).RoomId = roomName;
+            RoomList.Add(new Room
+            {
+                RoomName = roomName,
+                Start = false,
+                Users = new List<RoomUser>
+                {
+                   u
+                }
+            }) ;
 
-           
             Groups.Add(Context.ConnectionId, roomName);
 
             Clients.OthersInGroup(roomName).Send("OthersChange", u);
@@ -88,7 +96,7 @@ namespace wuziqiNomal
         public bool RemoveRoom(string roomName)
         {
             Context.RequestCookies.TryGetValue("userId", out var userIds);
-            var userId = userIds.ToString();
+            var userId = userIds.Value;
             var room = RoomList.FirstOrDefault(o => o.RoomName == roomName);
 
             if (room == null)
@@ -107,7 +115,7 @@ namespace wuziqiNomal
         public (bool, string) BeReady(string roomName)
         {
             Context.RequestCookies.TryGetValue("userId", out var userIds);
-            var userId = userIds.ToString();
+            var userId = userIds.Value;
             var room = RoomList.FirstOrDefault(o => o.RoomName == roomName);
 
             if (room != null)
@@ -141,23 +149,11 @@ namespace wuziqiNomal
 
         public override Task OnConnected()
         {
-            Context.RequestCookies.TryGetValue("userId", out var userIds);
-            var userId = userIds.ToString();
-            var user = users.FirstOrDefault(o => o.Id == userId);
-            if (!string.IsNullOrEmpty(user.RoomId))
-            {
-                Groups.Add(Context.ConnectionId, user.RoomId);
-            }
             return base.OnConnected();
-            //Context.GetHttpContext().Request.Cookies.Get("userId", out var userId);
-
-            //await Groups.RemoveFromGroupAsync(Context.ConnectionId, "Room3");
-            //await base.OnDisconnectedAsync(exception);
         }
         public override Task OnDisconnected(bool stopCalled)
         {
             return base.OnDisconnected(stopCalled);
-            //await base.OnConnectedAsync();
         }
     }
 }

@@ -11,13 +11,17 @@ namespace wuziqiNomal.Controllers
     {
         public ActionResult Index()
         {
-            var userIds =  HttpContext.Request.Cookies.Get("userId");
-            var userId = userIds.ToString();
-            if (userId == null)
+            var userIds = HttpContext.Request.Cookies.Get("userId");
+            var userId = "";
+            if (userIds == null)
             {
                 userId = Guid.NewGuid().ToString();
                 HttpCookie cookie = new HttpCookie("userId", userId);
                 HttpContext.Response.Cookies.Add(cookie);
+            }
+            else
+            {
+                userId = userIds.Value;
             }
             var users = ChatHub.users;
             if (users == null)
@@ -48,23 +52,35 @@ namespace wuziqiNomal.Controllers
 
             return View();
         }
-        public ActionResult Room()
+        public ActionResult Room(string roomid)
         {
+            var roomId = roomid;
+
             var userIds = HttpContext.Request.Cookies.Get("userId");
-            var userId = userIds.ToString();
+            var userId = userIds.Value;
 
             var users = ChatHub.users;
 
             var user = users.FirstOrDefault(o => o.Id == userId);
 
+            var RoomList = ChatHub.RoomList;
 
-            _memoryCache.TryGetValue<Room>(RoomId, out var Room);
+            var Room = RoomList.FirstOrDefault(o => o.RoomName == roomId);
 
-            RoomUser1 = Room.Users.FirstOrDefault(o => o.Id == userId);
+            var RoomUser1 = Room.Users.FirstOrDefault(o => o.Id == userId);
 
-            RoomUser = Room.Users.Where(o => o.Id != userId).ToList();
+            var RoomUser = Room.Users.Where(o => o.Id != userId).ToList();
 
-            Start = Room.Start;
+            var Start = Room.Start;
+
+            ViewBag.RoomUser = RoomUser;
+            ViewBag.RoomUser1 = RoomUser1;
+
+            ViewBag.RoomId = roomId;
+
+            ViewBag.Start = Start;
+
+
             return View();
         }
     }

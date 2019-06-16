@@ -6,17 +6,17 @@
 <body>
     <div id="player">
         当前位置：
-        <em id="local">@Model.RoomId</em>
+        <em id="local">@ViewBag.Start</em>
 
         <br></br>
-        <div id="@Model.user.Id">
-            Play One: Name：<em id="onename">@Model.user.Id</em>
-            Color:<em id="onecolor">@Model.RoomUser1.Color</em>
-            Ready:<em id="ready1">@Model.RoomUser1.Ready</em>
+        <div id="@ViewBag.user.Id">
+            Play One: Name：<em id="onename">@ViewBag.user.Id</em>
+            Color:<em id="onecolor">@ViewBag.RoomUser1.Color</em>
+            Ready:<em id="ready1">@ViewBag.RoomUser1.Ready</em>
         </div>
 
         <br></br>
-        @foreach (var user in Model.RoomUser)
+        @foreach (var user in ViewBag.RoomUser)
         {
             <div id="@user.Id">
                 Play Two: Name：<em id="name">@user.Id</em>
@@ -26,7 +26,7 @@
         }
     </div>
 
-    <input type="button" id="ready" value="@(Model.RoomUser1.Ready ? "已准备":"准备")" />
+    <input type="button" id="ready" value="@(ViewBag.RoomUser1.Ready ? "已准备":"准备")" />
     <input type="button" id="quite" value="退出" />
 
     <canvas id="chess" position="absolute" width="1300" height="800"></canvas>
@@ -35,7 +35,7 @@
 <script src="~/Scripts/jquery-3.3.1.min.js"></script>
 <script src="~/Scripts/jquery.signalR-2.4.1.js"></script>
 <script type="text/javascript">
-    var room ='@Model.RoomId';
+    var room ='@ViewBag.RoomId';
     var grid = 30;
     var h = 50;
     var dig = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
@@ -54,9 +54,9 @@
     var c = document.getElementById("chess");
     var cxt = c.getContext('2d');
 
-    var flag = '@Model.RoomUser1.Color' ==='Black' ; //是否轮到自己下
-    var start = '@Model.Start'=== 'True';
-    var colors =  '@Model.RoomUser1.Color' ==='Black' ? 1:-1;//通讯确定  自己的颜色。
+    var flag = '@ViewBag.RoomUser1.Color' ==='Black' ; //是否轮到自己下
+    var start = '@ViewBag.Start'=== 'True';
+    var colors =  '@ViewBag.RoomUser1.Color' ==='Black' ? 1:-1;//通讯确定  自己的颜色。
     //添加点击事件
     c.addEventListener('click', function (e) {
         if (start) {

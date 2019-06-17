@@ -1,0 +1,205 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<html>
+<body>
+    <div id="player">
+        当前位置：
+        <em id="local">@ViewBag.RoomId</em>
+
+        <br></br>
+        <div id="@ViewBag.RoomUser1.Id">
+            Play One: Name：<em id="onename">@ViewBag.RoomUser1.Id</em>
+            Color:<em id="onecolor">@ViewBag.RoomUser1.Color</em>
+            Ready:<em id="ready1">@ViewBag.RoomUser1.Ready</em>
+        </div>
+
+        <br></br>
+        @foreach (var user in ViewBag.RoomUser)
+        {
+            <div id="@user.Id">
+                Play Two: Name：<em id="name">@user.Id</em>
+                Color:<em id="color">@user.Color</em>
+                Ready:<em id="ready1">@user.Ready</em>
+            </div>
+        }
+    </div>
+
+    <input type="button" id="ready" value="@(ViewBag.RoomUser1.Ready ? "已准备":"准备")" />
+    <input type="button" id="quite" value="退出" />
+
+    <canvas id="chess" position="absolute" width="1300" height="800"></canvas>
+</body>
+</html>
+<script src="~/Scripts/jquery-3.3.1.min.js"></script>
+<script src="~/Scripts/jquery.signalR-2.4.1.js"></script>
+<script src="~/signalr/hubs"></script>
+<script type="text/javascript">
+    var room ='@ViewBag.RoomId';
+    var grid = 30;
+    var h = 50;
+    var dig = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    // var w = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S'];
+    var w = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+    var len = 15;
+    var map = null;
+
+    function loadMap() {
+        map = new Array(len);
+        for (var i = 0; i < len; i++) {
+            map[i] = new Array(len);
+        }
+    }
+    loadMap();
+    var c = document.getElementById("chess");
+    var cxt = c.getContext('2d');
+
+    var flag = '@ViewBag.RoomUser1.Color' ==='Black' ; //是否轮到自己下
+    var start = '@ViewBag.Start'=== 'True';
+    var colors =  '@ViewBag.RoomUser1.Color' ==='Black' ? 1:-1;//通讯确定  自己的颜色。
+    //添加点击事件
+    c.addEventListener('click', function (e) {
+        if (start) {
+            pp = getEventPosition(e);
+            cxt.clearRect(0, 0, c.width, c.height);
+            draw(pp, colors);
+        }
+    }, false);
+
+    function draw(pp, color) {
+        console.log(pp);
+        cxt.font = "bold 13px Arial";
+        for (var i = 0; i < len; i++) {
+            cxt.fillText(dig[i], 200 + i * grid - 3, h - 10);
+        }
+        for (var i = 0; i < len; i++) {
+            cxt.fillText(w[i], 200 - 20, grid * i + h + 5);
+        }
+        cxt.closePath();
+        cxt.stroke();
+        var x = [];
+        var y = [];
+        for (var i = 0; i < len; i++) {
+            cxt.moveTo(200, i * grid + h);
+            cxt.lineTo(grid * (len - 1) + 200, i * grid + h);
+
+            var p = new Point();
+            p.x = grid * i + 200;
+            p.y = i * grid + h;
+            y.push(p);
+        }
+        for (var i = 1; i < len + 1; i++) {
+            cxt.moveTo(200 + (i - 1) * grid, h);
+            cxt.lineTo(200 + (i - 1) * grid, grid * (len - 1) + h);
+
+            var p = new Point();
+            p.x = 200 + (i - 1) * grid;
+            p.y = grid * (i) + h;
+            x.push(p);
+        }
+
+        cxt.closePath();
+        cxt.stroke();
+        cxt.fillStyle = "#000000";
+        for (var i = 0; i < x.length; i++) {
+            var px = x[i];
+            for (var j = 0; j < y.length; j++) {
+                cxt.beginPath();
+                var py = y[j];
+                cxt.arc(px.x, py.y, 12, 0, Math.PI * 2, true);
+                if (pp && flag && cxt.isPointInPath(pp.x, pp.y) && map[i][j] == undefined) {
+                    console.log(i, j);
+                    map[i][j] = color;
+
+                    if (colors === color) {
+                        downChess(pp);
+                        flag = false;
+                    }
+                    if (CheckWin(i, j)) {
+                        alert(color + "获胜");
+                        //alert("继续？");
+                        window.location.reload();
+                        //loadMap();
+                    }
+                }
+                if (map[i][j] === 1) {
+                    cxt.fillStyle = "#EE2C2C";
+                    cxt.fill();
+                    cxt.fillStyle = "#000000";
+                }
+                else if (map[i][j] === -1) {
+                    cxt.fillStyle = "#000000";
+                    cxt.fill();
+                    cxt.fillStyle = "#000000";
+                }
+                cxt.closePath();
+            }
+        }
+
+        cxt.beginPath();
+        cxt.closePath();
+    }
+
+    function getEventPosition(ev) {
+        var p = new Point();
+        if (ev.layerX || ev.layerX === 0) {
+            p.x = ev.layerX;
+            p.y = ev.layerY;
+        } else if (ev.offsetX || ev.offsetX === 0) { // Opera
+            p.x = ev.offsetX;
+            p.y = ev.offsetY;
+        }
+        return p;
+    }
+
+    function Point() {
+        this.x = 0;
+        this.y = 0;
+    }
+
+    draw();
+    function CheckWin(x, y) {
+        var dx = [1, 0, 1, 1];
+        var dy = [0, 1, 1, -1];
+        //DX[0] DY[0] 表示X 轴正向检查是否有五子
+        //DX[1] DY[1] 表示Y 轴正向检查是否有五子
+        //DX[2] DY[2] 表示右上 轴正向检查是否有五子
+        //DX[3] DY[3] 表示右下 轴正向检查是否有五子
+        var a = map[x][y];
+        var c1, c2, xx, yy;
+        for (var k = 0; k < 4; k++) {
+            c1 = c2 = 0;
+            // 如果当前棋子类型与本方向上的棋子是同一类则，继续判断
+            // 正方向逐个比较
+            for (xx = x + dx[k], yy = y + dy[k]; map[xx][yy] === a; xx += dx[k], yy += dy[k]) {
+                c1++;
+            }
+            // 相反方向逐个比较
+            for (xx = x - dx[k], yy = y - dy[k]; map[xx][yy] === a; xx -= dx[k], yy -= dy[k]) {
+                c2++;
+            }
+
+            if (c1 + c2 >= 4) {  // 不包含当前，已经有4个连续的，直接判胜利，保存胜利数据
+                // 将胜利的棋子保存到数组中
+                //xx = x - c2 * DX[k];//将起始位置定位到最末端
+                //yy = y - c2 * DY[k];
+                //for (var i = 0; i < 5; i++) {//逐个添加
+                //    _winPoint[i] = OXPoint(xx, yy);
+                //    xx += DX[k];
+                //    yy += DY[k];
+                //}
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function opponentDraw(pp,color) {
+        flag = true;
+        cxt.clearRect(0, 0, c.width, c.height);
+        draw(pp,color);
+    }
+
+</script>
+<script src="~/Scripts/chat.js"></script>
